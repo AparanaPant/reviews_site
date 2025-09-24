@@ -1,0 +1,35 @@
+version: "3.9"
+services:
+  interview-service:
+    image: maven:3.8.1-openjdk-16
+    ports:
+      - "3000:3000"
+    environment:
+      - SERVER_PORT=3000
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=interview
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/interview
+    volumes:
+      - ./:/app
+      - ~/.m2:/root/.m2
+    working_dir: /app
+#    command: mvn spring-boot:run
+    command: mvn -q -Dmaven.test.skip=true spring-boot:run
+
+    depends_on:
+      - db
+
+  db:
+    image: mysql:8.4
+    ports:
+      - "3307:3306"
+    command: "--character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci"
+    volumes:
+      - db-data:/var/lib/mysql
+    environment:
+      - TZ=UTC
+      - MYSQL_ROOT_PASSWORD=interview
+      - MYSQL_DATABASE=interview
+
+volumes:
+  db-data:

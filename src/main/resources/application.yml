@@ -1,0 +1,27 @@
+server:
+  port: ${SERVER_PORT:3000}
+
+spring:
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3307/interview?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:root}
+    password: ${SPRING_DATASOURCE_PASSWORD:interview}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+
+reviews:
+  api:
+    url: ${REVIEW_API_URL:https://obm8fcrdr1.execute-api.us-east-1.amazonaws.com/production/reviews}
+    key: ${REVIEW_API_KEY:GWaPfEKWfq4nNTDsCWuqaBlSr5YmyCf820GOCc43}
