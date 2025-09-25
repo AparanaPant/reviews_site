@@ -11,36 +11,31 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import static com.example.reviews.util.PaginationUtils.createPageable;
-
+import com.example.reviews.mapper.ReviewMapper;
 @Service
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
+    private final ReviewMapper reviewMapper;
 
-    public ReviewService(ReviewRepository reviewRepository) {
+    public ReviewService(ReviewRepository reviewRepository,ReviewMapper reviewMapper) {
         this.reviewRepository = reviewRepository;
+        this.reviewMapper = reviewMapper;
     }
 
     @Transactional(readOnly = true)
     public Page<ReviewDto> search(String source, String tag, int page, int size) {
         Specification<Review> spec = getSpec(source, tag);
-        Pageable pageable = createPageable(page, size,Sort.by(Sort.Direction.DESC, "createdAt")   // or null for unsorted
-        );
-
-        return reviewRepository.findAll(spec, pageable).map(this::toDto);
-    }
-
-    private static Specification<Review> getSpec(String source, String tag) {
-        return Specification
-                .where(ReviewSpecifications.source(source))  // ignored if null
-                .and(ReviewSpecifications.tag(tag));         // ignored if null
+        Pageable pageable = createPageable(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return reviewRepository.findAll(spec, pageable)
+                .map(reviewMapper::toDto);
     }
 
     @Transactional(readOnly = true)
     public ReviewDto get(Long id) {
         Review r = reviewRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException("Review " + id + " not found"));
-        return toDto(r);
+        return reviewMapper.toDto(r); // <--- call here
     }
 
     @Transactional
@@ -50,19 +45,11 @@ public class ReviewService {
         }
     }
 
-    private ReviewDto toDto(Review r) {
-        ReviewDto d = new ReviewDto();
-        d.id = r.getId();
-        d.source = r.getSource();
-        d.externalId = r.getExternalId();
-        d.author = r.getAuthor();
-        d.rating = r.getRating();
-        d.content = r.getContent();
-        d.reviewDate = r.getReviewDate();
-        d.tag = r.getTag();
-        return d;
+    private static Specification<Review> getSpec(String source, String tag) {
+        return Specification
+                .where(ReviewSpecifications.source(source))
+                .and(ReviewSpecifications.tag(tag));
     }
-
     public static class NotFoundException extends RuntimeException {
         public NotFoundException(String m) { super(m); }
     }

@@ -1,14 +1,15 @@
 package com.example.reviews.model.dto;
+import lombok.Value;
 import java.time.LocalDateTime;
 
-
+@Value
 public class ReviewDto {
-    public Long id;
-    public String source;
-    public String externalId;
-    public String author;
-    public Integer rating;
-    public String content;
-    public LocalDateTime reviewDate;
-    public String tag;
+    Long id;
+    String source;
+    String externalId;
+    String author;
+    Integer rating;
+    String content;
+    LocalDateTime reviewDate;
+    String tag;
 }
