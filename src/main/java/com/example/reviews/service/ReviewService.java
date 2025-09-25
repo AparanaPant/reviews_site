@@ -1,13 +1,12 @@
 package com.example.reviews.service;
 
 import com.example.reviews.model.dto.ReviewDto;
-import com.example.reviews.model.dto.ReviewSearchParams;
 import com.example.reviews.model.entity.Review;
 import com.example.reviews.repository.ReviewRepository;
 import com.example.reviews.repository.ReviewSpecifications;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -15,23 +14,31 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class ReviewService {
 
-    @Autowired
-    private ReviewRepository reviewRepository;
+    private final ReviewRepository reviewRepository;
+
+    public ReviewService(ReviewRepository reviewRepository) {
+        this.reviewRepository = reviewRepository;
+    }
+
     @Transactional(readOnly = true)
-    public Page<ReviewDto> search(ReviewSearchParams p, Pageable pageable) {
-        Specification<Review> spec = Specification.where(ReviewSpecifications.q(p.q))
-                .and(ReviewSpecifications.source(p.source))
-                .and(ReviewSpecifications.minRating(p.minRating))
-                .and(ReviewSpecifications.maxRating(p.maxRating))
-                .and(ReviewSpecifications.from(p.fromDate))
-                .and(ReviewSpecifications.to(p.toDate))
-                .and(ReviewSpecifications.tag(p.tag));
+    public Page<ReviewDto> search(String source, String tag, int page, int size) {
+        int zeroBased = Math.max(0, page - 1);
+        int clampedSize = Math.min(Math.max(size, 1), 200);
+
+        Specification<Review> spec = ReviewSpecifications.alwaysTrue();
+        Specification<Review> bySource = ReviewSpecifications.source(source);
+        Specification<Review> byTag    = ReviewSpecifications.tag(tag);
+        if (bySource != null) spec = spec.and(bySource);
+        if (byTag    != null) spec = spec.and(byTag);
+
+        var pageable = PageRequest.of(zeroBased, clampedSize, Sort.by(Sort.Direction.DESC, "reviewDate"));
         return reviewRepository.findAll(spec, pageable).map(this::toDto);
     }
 
     @Transactional(readOnly = true)
     public ReviewDto get(Long id) {
-        Review r = reviewRepository.findById(id).orElseThrow(() -> new NotFoundException("Review " + id + " not found"));
+        Review r = reviewRepository.findById(id)
+                .orElseThrow(() -> new NotFoundException("Review " + id + " not found"));
         return toDto(r);
     }
 
@@ -40,24 +47,6 @@ public class ReviewService {
         if (reviewRepository.existsById(id)) {
             reviewRepository.deleteById(id);
         }
-    }
-    @Transactional
-    public Review upsert(String source, String externalId,
-                         String author, Integer rating, String content, String tag,
-                         java.time.LocalDateTime reviewDate) {
-        Review r = reviewRepository.findBySourceAndExternalId(source, externalId).orElseGet(Review::new);
-        r.setSource(source);
-        r.setExternalId(externalId);
-        r.setAuthor(author);
-        r.setRating(rating);
-        r.setTag(tag);
-        r.setContent(content);
-        r.setReviewDate(reviewDate);
-        java.time.LocalDateTime now = java.time.LocalDateTime.now();
-        if (r.getId() == null) r.setCreatedAt(now);
-        r.setUpdatedAt(now);
-
-        return reviewRepository.save(r);
     }
 
     private ReviewDto toDto(Review r) {

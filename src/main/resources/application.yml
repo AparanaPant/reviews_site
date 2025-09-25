@@ -3,7 +3,7 @@ server:
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3307/interview?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC}
+    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3307/interview?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&rewriteBatchedStatements=true}
     username: ${SPRING_DATASOURCE_USERNAME:root}
     password: ${SPRING_DATASOURCE_PASSWORD:interview}
   jpa:
@@ -13,10 +13,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
-        jdbc:
-          batch_size: 500
-        order_inserts: true
-        order_updates: true
 
   jackson:
     serialization:
