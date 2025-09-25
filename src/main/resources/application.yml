@@ -13,6 +13,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+        jdbc:
+          batch_size: 500
+        order_inserts: true
+        order_updates: true
+
   jackson:
     serialization:
       write-dates-as-timestamps: false
@@ -25,3 +30,4 @@ reviews:
   api:
     url: ${REVIEW_API_URL:https://obm8fcrdr1.execute-api.us-east-1.amazonaws.com/production/reviews}
     key: ${REVIEW_API_KEY:GWaPfEKWfq4nNTDsCWuqaBlSr5YmyCf820GOCc43}
+    page-size: 60

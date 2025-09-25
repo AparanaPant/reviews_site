@@ -11,5 +11,5 @@ public class ReviewDto {
     public Integer rating;
     public String content;
     public LocalDateTime reviewDate;
-    public Set<String> tags;
+    public String tag;
 }

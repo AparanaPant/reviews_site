@@ -3,7 +3,6 @@ package com.example.reviews.service;
 import com.example.reviews.model.dto.ReviewDto;
 import com.example.reviews.model.dto.ReviewSearchParams;
 import com.example.reviews.model.entity.Review;
-import com.example.reviews.model.entity.ReviewTag;
 import com.example.reviews.repository.ReviewRepository;
 import com.example.reviews.repository.ReviewSpecifications;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,9 +11,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Set;
-import java.util.stream.Collectors;
 
 @Service
 public class ReviewService {
@@ -46,28 +42,21 @@ public class ReviewService {
         }
     }
     @Transactional
-    public Review upsert(String source, String externalId, String author, Integer rating, String content,
-                         java.time.LocalDateTime reviewDate, java.util.Set<String> tags) {
+    public Review upsert(String source, String externalId,
+                         String author, Integer rating, String content, String tag,
+                         java.time.LocalDateTime reviewDate) {
         Review r = reviewRepository.findBySourceAndExternalId(source, externalId).orElseGet(Review::new);
         r.setSource(source);
         r.setExternalId(externalId);
         r.setAuthor(author);
         r.setRating(rating);
+        r.setTag(tag);
         r.setContent(content);
         r.setReviewDate(reviewDate);
         java.time.LocalDateTime now = java.time.LocalDateTime.now();
         if (r.getId() == null) r.setCreatedAt(now);
         r.setUpdatedAt(now);
 
-        // tags
-        r.getTags().clear();
-        if (tags != null) {
-            for (String t : tags) {
-                if (t != null && !t.isBlank()) {
-                    r.getTags().add(new ReviewTag(r, t.trim()));
-                }
-            }
-        }
         return reviewRepository.save(r);
     }
 
@@ -80,8 +69,7 @@ public class ReviewService {
         d.rating = r.getRating();
         d.content = r.getContent();
         d.reviewDate = r.getReviewDate();
-        Set<String> tags = r.getTags().stream().map(ReviewTag::getTag).collect(Collectors.toSet());
-        d.tags = tags;
+        d.tag = r.getTag();
         return d;
     }
 
