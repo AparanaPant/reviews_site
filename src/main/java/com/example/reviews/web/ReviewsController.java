@@ -27,7 +27,6 @@ public class ReviewsController {
 
         return new PaginationDto<>(
                 page,                       // 1-based page (what client expects)
-                size,                       // requested requestedSize
                 p.getTotalPages(),          // total number of pages
                 p.getTotalElements(),       // total matching records
                 p.getNumberOfElements(),    // number of elements in this page

@@ -18,9 +18,4 @@ public final class ReviewSpecifications {
         String t = tag.trim().toLowerCase();
         return (root, cq, cb) -> cb.equal(cb.lower(root.get("tag")), t);
     }
-
-    /** Always-true spec to start safe chaining. */
-    public static Specification<Review> alwaysTrue() {
-        return (root, cq, cb) -> cb.conjunction();
-    }
 }
