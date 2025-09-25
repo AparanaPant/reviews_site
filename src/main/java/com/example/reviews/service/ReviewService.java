@@ -24,15 +24,18 @@ public class ReviewService {
     public Page<ReviewDto> search(String source, String tag, int page, int size) {
         int zeroBased = Math.max(0, page - 1);
         int clampedSize = Math.min(Math.max(size, 1), 200);
+        Specification<Review> spec = getSpec(source, tag);
+        var pageable = PageRequest.of(zeroBased, clampedSize, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return reviewRepository.findAll(spec, pageable).map(this::toDto);
+    }
 
+    private static Specification<Review> getSpec(String source, String tag) {
         Specification<Review> spec = ReviewSpecifications.alwaysTrue();
         Specification<Review> bySource = ReviewSpecifications.source(source);
         Specification<Review> byTag    = ReviewSpecifications.tag(tag);
         if (bySource != null) spec = spec.and(bySource);
         if (byTag    != null) spec = spec.and(byTag);
-
-        var pageable = PageRequest.of(zeroBased, clampedSize, Sort.by(Sort.Direction.DESC, "reviewDate"));
-        return reviewRepository.findAll(spec, pageable).map(this::toDto);
+        return spec;
     }
 
     @Transactional(readOnly = true)

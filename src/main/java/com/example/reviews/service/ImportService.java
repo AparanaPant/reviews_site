@@ -33,7 +33,7 @@ public class ImportService {
 
     private static final Logger log = LoggerFactory.getLogger(ImportService.class);
 
-    /** Fallback when app.page-size is not provided. */
+    /** Fallback when app.page-requestedSize is not provided. */
     private static final int DEFAULT_PAGE_SIZE = 50;
 
     private final AppProperties props;
@@ -64,7 +64,7 @@ public class ImportService {
         int totalPages = 1; // unknown until the first successful response
         final int size = props.getPageSize() != null ? props.getPageSize() : DEFAULT_PAGE_SIZE;
 
-        log.info("Starting reviews import from {} (page size={})", props.getUrl(), size);
+        log.info("Starting reviews import from {} (page requestedSize={})", props.getUrl(), size);
 
         // 2) Page loop
         try {
@@ -120,7 +120,7 @@ public class ImportService {
         URI uri = UriComponentsBuilder
                 .fromHttpUrl(props.getUrl())
                 .queryParam("page", page)
-                .queryParam("size", size)
+                .queryParam("requestedSize", size)
                 .build(true)
                 .toUri();
 

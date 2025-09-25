@@ -16,25 +16,22 @@ public class ReviewsController {
     public ReviewsController(ReviewService reviewService) {
         this.reviewService = reviewService;
     }
-
-    /**
-     * Minimal list endpoint.
-     * Optional filters: source, tag
-     * Paging: 1-based page, size
-     */
     @GetMapping
     public PaginationDto<ReviewDto> list(
             @RequestParam(required = false) String source,
             @RequestParam(required = false) String tag,
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "20") int size
+            @RequestParam(defaultValue = "1") int page,   // client sends 1-based
+            @RequestParam(defaultValue = "10") int size
     ) {
         Page<ReviewDto> p = reviewService.search(source, tag, page, size);
+
         return new PaginationDto<>(
-                page,
-                size,
-                p.getTotalPages(),
-                p.getContent()
+                page,                       // 1-based page (what client expects)
+                size,                       // requested requestedSize
+                p.getTotalPages(),          // total number of pages
+                p.getTotalElements(),       // total matching records
+                p.getNumberOfElements(),    // number of elements in this page
+                p.getContent()              // actual items
         );
     }
 
