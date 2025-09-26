@@ -1,23 +1,20 @@
 package com.example.reviews.service;
+
 import com.example.reviews.config.AppProperties;
 import com.example.reviews.model.upstream.ReviewInDto;
 import com.example.reviews.model.upstream.ReviewsEnvelopeDto;
 import com.example.reviews.repository.BulkReviewWriter;
+import com.example.reviews.util.HttpClientHelper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.UriComponentsBuilder;
 
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Imports reviews from an upstream HTTP API, page by page, and performs
@@ -37,15 +34,18 @@ public class ImportService {
     private static final int DEFAULT_PAGE_SIZE = 50;
 
     private final AppProperties props;
-    private final RestTemplate restTemplate;
     private final ObjectMapper mapper;        // Spring Boot's pre-configured ObjectMapper
     private final BulkReviewWriter bulkWriter;
+    private final HttpClientHelper httpClientHelper;
 
-    public ImportService(AppProperties props, BulkReviewWriter bulkWriter, ObjectMapper mapper) {
+    public ImportService(AppProperties props,
+                         BulkReviewWriter bulkWriter,
+                         ObjectMapper mapper,
+                         HttpClientHelper httpClientHelper) {
         this.props = props;
         this.bulkWriter = bulkWriter;
         this.mapper = mapper;
-        this.restTemplate = new RestTemplate();
+        this.httpClientHelper = httpClientHelper;
     }
 
     /**
@@ -69,10 +69,16 @@ public class ImportService {
         // 2) Page loop
         try {
             do {
-                // 2.1) Build & call the upstream endpoint for this page
-                ResponseEntity<String> resp = fetchPage(page, size);
+                // 2.1) Call the upstream endpoint for this page via reusable helper
+                ResponseEntity<String> resp = httpClientHelper.get(
+                        props.getUrl(),
+                        Map.of("page", page, "size", size),
+                        Map.of("x-api-key", props.getKey())
+                );
+
                 if (!resp.getStatusCode().is2xxSuccessful() || resp.getBody() == null) {
-                    log.error("Upstream returned non-2xx for page {}: {}", page, resp.getStatusCodeValue());
+                    log.error("Upstream returned non-2xx or empty body for page {}: status={}",
+                            page, (resp != null ? resp.getStatusCodeValue() : "null"));
                     break; // stop the run; could be retried by caller or next startup
                 }
 
@@ -112,22 +118,6 @@ public class ImportService {
     // ------------------------------------------------------------------------------------
     // Helpers
     // ------------------------------------------------------------------------------------
-
-    /**
-     * Builds the URL with query params and performs the GET with the required API key header.
-     */
-    private ResponseEntity<String> fetchPage(int page, int size) {
-        URI uri = UriComponentsBuilder
-                .fromHttpUrl(props.getUrl())
-                .queryParam("page", page)
-                .queryParam("size", size)
-                .build(true)
-                .toUri();
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.add("x-api-key", props.getKey());
-        return restTemplate.exchange(uri, HttpMethod.GET, new HttpEntity<>(headers), String.class);
-    }
 
     /**
      * Parses either:
@@ -182,13 +172,9 @@ public class ImportService {
     // Small internal carriers to keep method signatures tidy/readable
     // ------------------------------------------------------------------------------------
 
-    /**
-     * Holds the result of parsing a page: the items plus (optional) totalPages.
-     */
+    /** Holds the result of parsing a page: the items plus (optional) totalPages. */
     private record ParseResult(List<ReviewInDto> items, Integer totalPages) {}
 
-    /**
-     * Holds the result of validation: filtered items and the skip count.
-     */
+    /** Holds the result of validation: filtered items and the skip count. */
     private record ValidationResult(List<ReviewInDto> good, int skipped) {}
 }
