@@ -8,3 +8,4 @@ public interface ReviewRepository
 
     Optional<Review> findBySourceAndExternalId(String source, String externalId);
 }
+//abstract class pass
