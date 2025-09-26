@@ -1,96 +1,56 @@
 # Reviews Service
 
-A Spring Boot service that **imports and stores customer reviews** from a single upstream Review API and exposes a REST API to **search, retrieve, and delete** reviews.
-
-- Runs with `docker-compose up`
-- Imports all (new) reviews on startup
-- Persists data to MySQL
-- Clean DTO mapping with MapStruct + Lombok
-- Config managed through environment variables (dotenv supported for local dev)
+A small Spring Boot app that **imports customer reviews** from one upstream API and exposes a REST API to **list, fetch, and delete** reviews. Scope is intentionally tight: I store only what’s needed for the assignment in a single `reviews` table.
 
 ---
 
-## ⚠️ Notes on the Provided Upstream API
+## Quick start
 
-**Pagination mismatch**  
-The mock API’s pagination metadata (`page`, `size`, `totalPages`) can be inconsistent — for example, `totalPages` may not reflect small changes in total record count. In this system, we rely on the upstream `totalPages` as given, even if it’s not always perfectly accurate.
-
-**Tags**  
-The upstream API defines the field as `tags` (plural) but always returns a single string value (e.g., `"SERVICE"`, `"SALES"`). To keep things simple, we store it as a plain string instead of forcing it into a collection.
-
----
-
-## Tech Choices / Compatibility Notes
-
-- **Spring Boot version**: I used **Spring Boot 2.7.x** because the supplied `docker-compose.yml` specifies:  
-  ```
-  image: maven:3.8.1-openjdk-16
-  ```  
-  which locks the project to JDK 16.  
-  - Spring Boot 3.x requires at least JDK 17, so upgrading would break compatibility with the provided container setup.  
-  - In a real-world project, I would likely move to **Spring Boot 3.x + JDK 17+** to benefit from newer Jakarta APIs, performance improvements, and longer support windows.
-
----
-
-## Features
-
-- Import on startup (fetch → batch upsert into MySQL)
-- REST API:
-  - `GET /reviews` — list/search (paginated)
-  - `GET /reviews/{id}` — fetch one
-  - `DELETE /reviews/{id}` — delete one
-- Config via `.env` (dotenv loaded before Spring for local dev)
-- Proper logging & error handling
-- Reusable mapper and DTOs (Lombok `@Value @Builder`, MapStruct)
-- Docker Compose: database + service
-
----
-
-## 🔌 REST API
-
-### 1) List/Search All Reviews (Paginated)
-
-```
-GET /reviews?page=1&pageSize=10
-```
-
-**Query params**
-- `page` — **1-based** page index (e.g., `1`, `2`, …)
-- `pageSize` — items per page (e.g., `10`, `50`, `100`)
-- (Optional, future-friendly) filters:  
-  `source`, `author`, `rating`, `tag`, `fromDate`, `toDate`
-
-**Example `curl`**
 ```bash
-curl -X GET "http://localhost:3000/reviews?page=1&pageSize=10"
+docker compose up
+```
+The app boots, hits the upstream API, and upserts reviews into MySQL. You can watch the importer logs, e.g.
+
+```
+2025-09-26 11:20:58.088  INFO ...ReviewImportService - Starting reviews import ... (startingPage=1, pageSize=500)
+2025-09-26 11:21:02.019  INFO ...ReviewImportService - Page 1/3: received=50, batched=50, skipped=0, affected=50
+2025-09-26 11:21:02.153  INFO ...ReviewImportService - Page 2/3: received=50, batched=50, skipped=0, affected=50
+2025-09-26 11:21:02.335  INFO ...ReviewImportService - Page 3/3: received=50, batched=50, skipped=0, affected=50
 ```
 
-**Example response (trimmed)**
+> The env is already wired in the repo. Inside Docker, the app connects to `db:3306`. If you expose MySQL on a different **host** port for your tools (e.g., `3307`), that doesn’t affect the in-Docker connection.
 
+---
+## ⚠️ Upstream quirks
+
+-The mock API always returns `totalPages = 3`  no matter what `size` I ask for, so I can’t fetch a single 500-record page and batch-insert 500 at once.
+In a typical API, `size=500` would return up to 500 on page 1 (then 501+ on page 2) and I’d upsert in 500-sized batches; despite the quirk, this still works here because the dataset is only 150 (3×50).
+
+## REST API
+
+### List / search
+```
+GET /reviews?page=1&pageSize=10&source=GOOGLE&tag=SERVICE
+```
+Example:
+```bash
+curl "http://localhost:3000/reviews?page=1&pageSize=10&source=GOOGLE&tag=SERVICE"
+```
+Response (trimmed):
 ```json
 {
   "page": 1,
-  "totalPages": 15,
-  "totalElements": 149,
   "pageSize": 10,
+  "totalElements": 149,
+  "totalPages": 15,
   "items": [
-    {
-      "id": 1751,
-      "source": "YELP",
-      "externalId": "6e775de5-46d4-4e46-8055-1ebd486a2d05",
-      "author": "Ben Nicolas",
-      "rating": 5,
-      "content": "Dolorem nihil sit. Quia corrupti perferendis.",
-      "reviewDate": "2025-09-25T21:16:21.258",
-      "tag": "SERVICE"
-    },
     {
       "id": 451,
       "source": "FACEBOOK",
       "externalId": "e559cab2-eb9a-4c55-845e-c6ef0a7911cf",
       "author": "Dr. Derrick Mayert",
       "rating": 3,
-      "content": "Ut est sunt corporis alias est et sequi voluptas.",
+      "content": "Ut est sunt corporis alias...",
       "reviewDate": "2025-09-26T08:36:11.246",
       "tag": "SALES"
     }
@@ -98,144 +58,74 @@ curl -X GET "http://localhost:3000/reviews?page=1&pageSize=10"
 }
 ```
 
-**Pagination fields (returned by our API)**
-- `page` — current page (1-based)
-- `pageSize` — requested page size
-- `totalElements` — total count of matched reviews in our DB
-- `totalPages` — computed from `totalElements` and `pageSize`
-- `items` — list of reviews for this page
-
-> We keep these fields consistent regardless of upstream quirks.
-
----
-
-### 2) Get Review by ID
-
+### Get by id
 ```
 GET /reviews/{id}
 ```
-
-**Example**
 ```bash
-curl -X GET "http://localhost:3000/reviews/124"
+curl "http://localhost:3000/reviews/124"
 ```
 
----
-
-### 3) Delete Review by ID
-
+### Delete by id
 ```
 DELETE /reviews/{id}
 ```
-
-**Example**
 ```bash
 curl -X DELETE "http://localhost:3000/reviews/124"
 ```
 
 ---
 
-## Design Assumptions
-
-- Real-world ingestion would come from **multiple sources** (Google, Yelp, DealerRater, Facebook, Cars.com, etc.) consolidated by a **single upstream API** (likely powered by crawlers/aggregators).  
-- Our service treats the upstream as a single provider and focuses on **importing and storing** that data reliably.
-- The assignment only requires **reviews** search; fields unrelated to reviews (e.g., business name) were **intentionally not stored** to keep scope tight and requirements satisfied.
-- The upstream exposes a single string `tag`; although tags are often lists, we store it **as-is** (string).
 
 ---
 
-## Running the System
+### Why upsert? (details also in code comments)
 
-### Prerequisites
-- Docker
-- Docker Compose
-
-### Environment Variables
-We support dotenv for local dev. Create `.env.local` (or use `.env.example` as a template):
-
-```
-SERVER_PORT=3000
-
-SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/interview?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&rewriteBatchedStatements=true
-SPRING_DATASOURCE_USERNAME=root
-SPRING_DATASOURCE_PASSWORD=interview
-
-LOG_LEVEL_ROOT=INFO
-
-REVIEW_API_URL=https://obm8fcrdr1.execute-api.us-east-1.amazonaws.com/production/reviews
-REVIEW_API_KEY=replace_me
-
-# Pagination default used by the importer and/or API defaults
-REVIEWS_PER_PAGE=500
-```
-
-> For local non-Docker runs, your JDBC URL host will likely be `localhost` and port `3307` if you kept the compose defaults.
-
-### Start
-```bash
-docker-compose up --build
-```
-
-What happens:
-1. MySQL container starts
-2. App container starts
-3. On startup, the app fetches reviews from the upstream API (authenticated with `x-api-key`) and stores them
-4. REST endpoints available at `http://localhost:3000`
+- The upstream can resend the same review with changes (fixed rating, edited text, updated tag).
+- Since our business model depends on customer reviews, the **latest version** of a review is what matters most.  
+  Ignoring duplicates would keep outdated data around, which reduces accuracy and increases costs.  
+  By using `INSERT ... ON DUPLICATE KEY UPDATE`, we ensure that new data overwrites old instead of being ignored.
+- The API does not provide any reliable incremental cursor or identifier to differentiate between “already pulled” and “updated” data.  
+  Without such a mechanism, upsert is the most reliable way to stay current.
+- Upsert keeps the DB in sync and avoids duplicates, aligning directly with the needs of a reviews-based business.
 
 ---
 
-## How This Meets the Assignment
+### Future improvements
+If data volume grows, I’d introduce a staging table (load → validate → merge) or shift updates into async workers.  
+For the current scope, upsert is the cleanest and most cost-effective solution.
 
-- **Import on startup**: implemented — we page through upstream data and batch upsert into MySQL.
-- **REST API**:  
-  - `GET /reviews` — returns paginated results with metadata
-  - `GET /reviews/{id}` — returns a single review
-  - `DELETE /reviews/{id}` — deletes a single review
-- **Docker Compose**: includes MySQL + app; `docker-compose up` runs the full stack.
+
+## Data model
+
+### What I ship (by design)
+A single table because the requirement is only “search reviews.”
+
+`reviews`  
+- `id` (PK, auto-increment `INT`)  
+- `source` (`VARCHAR`)  
+- `external_id` (`VARCHAR`) — forms a unique key with `source`  
+- `author`, `rating`, `content`, `review_date`, `tag`  
+- `created_at`, `updated_at`
+
+> Unique constraint: (`source`, `external_id`) so upserts are deterministic.
+
+### How I’d expand if scope grows
+- `sources(id, name, ...)`
+- `reviews(id, source_id FK, external_id, author, rating, content, review_date, created_at, updated_at, ...)`
+- `tags(id, name)` and `review_tags(review_id, tag_id)` if tags become multi-valued
+- `customers(...)` or `businesses(...)` if identity and multi-tenant cases appear
+- **IDs**: today `INT` is fine (~hundreds). At larger/distributed scale, I’d switch to **UUID v4/v7**.
 
 ---
 
-## System Diagram
+## Tech & compatibility
 
-```mermaid
-flowchart TD
-    A[External Reviews API] -->|fetch on startup| B[Importer (Spring Boot)]
-    B -->|batch upsert| C[(MySQL)]
-    C -->|query| D[REST API Layer]
-    D --> E1[GET /reviews]
-    D --> E2[GET /reviews/{id}]
-    D --> E3[DELETE /reviews/{id}]
-    E1 --> F[Clients / curl / UI]
-    E2 --> F
-    E3 --> F
-```
+- **Spring Boot 2.7.x** on **JDK 16** to match the provided Docker base image (`maven:3.8.1-openjdk-16`).  
+- Staying here avoids a forced upgrade to JDK 17+ (required by Boot 3).
 
 ---
 
-## Future Improvements for Scale
+## Why this meets the brief
 
-If this grows to **millions of reviews** or runs in a **distributed** environment:
-
-1. **Bulk Insert Optimization**
-   - Use multi-row `INSERT ... ON DUPLICATE KEY UPDATE`
-   - Batch sizes of **500–2,000** rows per transaction
-   - Ensure JDBC driver batching: `rewriteBatchedStatements=true`
-   - For JPA: `hibernate.jdbc.batch_size`, `order_inserts`, `order_updates`, and periodic `flush()/clear()`
-
-2. **Staging (Temp) Tables — Practical, Low-Risk Path** ✅  
-   - Load each import batch into a **staging table** first
-   - Validate/clean in staging
-   - Merge into the main `reviews` table with a single `INSERT ... SELECT` (or upsert)
-   - Truncate staging after success; on failure, just retry the batch
-
-3. **Asynchronous & Distributed Imports**
-   - Use a queue/stream (Kafka/RabbitMQ/SQS)
-   - Partition by source or ID range; multiple workers ingest concurrently
-
-4. **DB-Specific Strategies**
-   - For huge one-time loads: temporarily disable secondary indexes and rebuild after
-   - Consider `LOAD DATA INFILE` for massive raw inserts
-   - For heavy analytics/search, mirror to an analytical store (BigQuery/Snowflake)
-
-> For this assignment, we intentionally kept it simple with **paged fetch + batch upsert**, which meets the requirements cleanly. The **staging-table approach** is the next sensible step if the system needs to scale.
-
+I load from a single upstream, store only what’s needed, expose the three required endpoints, and keep the system easy to run: `docker compose up`. The importer is safe (upsert + validation), fast enough for the data size (batching + size=500), and leaves clear headroom to evolve (staging tables, async ingestion, richer schema) if the product grows.

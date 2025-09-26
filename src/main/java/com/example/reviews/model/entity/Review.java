@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
  * This class represents how a single review is stored inside our database.
  *
  * Key design notes:
- * - We use a numeric `Long` ID as the primary key instead of UUID:
+ * - I used a numeric `Long` ID as the primary key instead of UUID:
  *   • BIGINT is only 8 bytes compared to UUID’s 16 bytes → smaller index, faster joins and lookups.
  *   • Sequential IDs are more storage-friendly for MySQL’s B-Trees than random UUIDs.
  *   • We don’t need cross-data-center uniqueness here — a single DB instance is enough.
