@@ -20,7 +20,7 @@ The upstream API defines the field as `tags` (plural) but always returns a singl
 
 ---
 
-## 🛠️ Tech Choices / Compatibility Notes
+## Tech Choices / Compatibility Notes
 
 - **Spring Boot version**: I used **Spring Boot 2.7.x** because the supplied `docker-compose.yml` specifies:  
   ```
@@ -32,7 +32,7 @@ The upstream API defines the field as `tags` (plural) but always returns a singl
 
 ---
 
-## 🚀 Features
+## Features
 
 - Import on startup (fetch → batch upsert into MySQL)
 - REST API:
@@ -135,7 +135,7 @@ curl -X DELETE "http://localhost:3000/reviews/124"
 
 ---
 
-## 🧠 Design Assumptions
+## Design Assumptions
 
 - Real-world ingestion would come from **multiple sources** (Google, Yelp, DealerRater, Facebook, Cars.com, etc.) consolidated by a **single upstream API** (likely powered by crawlers/aggregators).  
 - Our service treats the upstream as a single provider and focuses on **importing and storing** that data reliably.
@@ -144,7 +144,7 @@ curl -X DELETE "http://localhost:3000/reviews/124"
 
 ---
 
-## 🛠️ Running the System
+## Running the System
 
 ### Prerequisites
 - Docker
@@ -184,7 +184,7 @@ What happens:
 
 ---
 
-## ✅ How This Meets the Assignment
+## How This Meets the Assignment
 
 - **Import on startup**: implemented — we page through upstream data and batch upsert into MySQL.
 - **REST API**:  
@@ -195,7 +195,7 @@ What happens:
 
 ---
 
-## 📊 System Diagram
+## System Diagram
 
 ```mermaid
 flowchart TD
@@ -212,7 +212,7 @@ flowchart TD
 
 ---
 
-## 🔮 Future Improvements for Scale
+## Future Improvements for Scale
 
 If this grows to **millions of reviews** or runs in a **distributed** environment:
 
@@ -239,21 +239,3 @@ If this grows to **millions of reviews** or runs in a **distributed** environmen
 
 > For this assignment, we intentionally kept it simple with **paged fetch + batch upsert**, which meets the requirements cleanly. The **staging-table approach** is the next sensible step if the system needs to scale.
 
----
-
-## 🧪 Quick `curl` Recap
-
-List (page 1, size 10):
-```bash
-curl -X GET "http://localhost:3000/reviews?page=1&pageSize=10"
-```
-
-Get by ID:
-```bash
-curl -X GET "http://localhost:3000/reviews/124"
-```
-
-Delete by ID:
-```bash
-curl -X DELETE "http://localhost:3000/reviews/124"
-```
