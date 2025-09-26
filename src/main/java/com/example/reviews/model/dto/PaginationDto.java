@@ -2,6 +2,11 @@ package com.example.reviews.model.dto;
 
 import java.util.List;
 
+/**
+ * Generic pagination wrapper for API responses.
+ * Carries page metadata plus the actual items.
+ */
+
 public record PaginationDto<T>(
         int page,              // current page index (1-based)
         int totalPages,        // total number of pages

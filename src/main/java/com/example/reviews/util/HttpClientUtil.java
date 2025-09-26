@@ -11,10 +11,20 @@ import org.springframework.web.util.UriComponentsBuilder;
 import java.net.URI;
 import java.util.Map;
 
+/**
+ * A small helper around RestTemplate for making GET calls to external APIs.
+ *
+ * Why we have this:
+ * - Keeps all the boilerplate (query params, headers, logging, error handling) in one place.
+ * - Guarantees: only returns if the response is 2xx AND body is non-empty.
+ * - Reusable: not tied to "reviews", can be used anywhere we need to hit an external service.
+ */
 @Component
 public class HttpClientUtil {
 
     private static final Logger log = LoggerFactory.getLogger(HttpClientUtil.class);
+
+    /** Shared RestTemplate instance (Spring manages connection handling). */
     private final RestTemplate restTemplate;
 
     public HttpClientUtil() {
@@ -22,30 +32,39 @@ public class HttpClientUtil {
     }
 
     /**
-     * Executes a GET request with optional query params and headers.
-     * Returns only if status is 2xx and body is non-empty; otherwise throws.
+     * Perform a GET request against a given URL.
      *
-     * @param url base URL (e.g., https://api.example.com/v1/resource)
-     * @param queryParams query parameters (page, size, etc.)
-     * @param headers HTTP headers (x-api-key, Authorization, etc.) — optional
-     * @return ResponseEntity<String> with a non-null, non-empty body
-     * @throws IllegalArgumentException if url is null/blank
-     * @throws IllegalStateException if transport fails or response is non-2xx/empty
+     * Things this enforces:
+     * - URL must be provided.
+     * - Non-2xx or empty body is treated as an error.
+     * - Logs enough info to debug if something goes wrong.
+     *
+     * Example:
+     * <pre>
+     * ResponseEntity<String> resp = httpClientUtil.get(
+     *     "https://api.example.com/v1/resource",
+     *     Map.of("page", 1, "size", 50),
+     *     Map.of("x-api-key", "secret-key")
+     * );
+     * String body = resp.getBody();
+     * </pre>
      */
     public ResponseEntity<String> get(String url,
                                       Map<String, Object> queryParams,
                                       Map<String, String> headers) {
 
-        if (url == null || url.isBlank()) {                 // URL must be provided by caller
+        if (url == null || url.isBlank()) {
             throw new IllegalArgumentException("URL must not be null/blank");
         }
 
+        // Build the full URI with query params if provided
         UriComponentsBuilder builder = UriComponentsBuilder.fromHttpUrl(url);
         if (queryParams != null) {
             queryParams.forEach(builder::queryParam);
         }
         URI uri = builder.build(true).toUri();
 
+        // Add headers if caller passed any (like auth keys, etc.)
         HttpHeaders httpHeaders = new HttpHeaders();
         if (headers != null) {
             headers.forEach(httpHeaders::add);
@@ -56,16 +75,20 @@ public class HttpClientUtil {
             ResponseEntity<String> resp =
                     restTemplate.exchange(uri, HttpMethod.GET, request, String.class);
 
+            // Fail fast if not a success status
             if (resp == null || !resp.getStatusCode().is2xxSuccessful()) {
                 int code = (resp == null ? -1 : resp.getStatusCodeValue());
                 log.error("Non-2xx response: uri={} status={}", uri, code);
                 throw new IllegalStateException("Non-2xx response: status=" + code);
             }
+
+            // Fail if body is missing or blank
             String body = resp.getBody();
             if (body == null || body.isBlank()) {
                 log.error("Empty body from upstream: uri={} status={}", uri, resp.getStatusCodeValue());
                 throw new IllegalStateException("Empty body from upstream");
             }
+
             return resp;
 
         } catch (RestClientException ex) {
