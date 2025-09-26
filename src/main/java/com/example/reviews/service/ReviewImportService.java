@@ -80,7 +80,7 @@ public class ReviewImportService {
      */
     public int importAll() {
         // Step 0: set up run state (these don’t change during the loop)
-        final int size = (props.getPageSize() != null) ? props.getPageSize() : DEFAULT_PAGE_SIZE; // items per page
+        final int size = (props.getItemsPerPage() != null) ? props.getItemsPerPage() : DEFAULT_PAGE_SIZE; // items per page
         final String baseUrl = props.getUrl();    // endpoint to hit (required)
         final String apiKey  = props.getKey();    // may be null; upstream might not require it
 

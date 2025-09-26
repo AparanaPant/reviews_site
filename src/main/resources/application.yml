@@ -1,11 +1,11 @@
 server:
-  port: ${SERVER_PORT:3000}
+  port: ${SERVER_PORT}
 
 spring:
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:mysql://localhost:3307/interview?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&rewriteBatchedStatements=true}
-    username: ${SPRING_DATASOURCE_USERNAME:root}
-    password: ${SPRING_DATASOURCE_PASSWORD:interview}
+    url: ${SPRING_DATASOURCE_URL}
+    username: ${SPRING_DATASOURCE_USERNAME}
+    password: ${SPRING_DATASOURCE_PASSWORD}
   jpa:
     hibernate:
       ddl-auto: update
@@ -20,10 +20,10 @@ spring:
 
 logging:
   level:
-    root: ${LOG_LEVEL_ROOT:INFO}
+    root: ${LOG_LEVEL_ROOT}
 
 reviews:
   api:
-    url: ${REVIEW_API_URL:https://obm8fcrdr1.execute-api.us-east-1.amazonaws.com/production/reviews}
-    key: ${REVIEW_API_KEY:GWaPfEKWfq4nNTDsCWuqaBlSr5YmyCf820GOCc43}
-    page-size: 500
+    url: ${REVIEW_API_URL}
+    key: ${REVIEW_API_KEY}
+    items-per-page: ${REVIEWS_PER_PAGE}

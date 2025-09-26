@@ -18,5 +18,5 @@ import org.springframework.context.annotation.Configuration;
 public class AppProperties {
     private String url;
     private String key;
-    private Integer pageSize = 50;
+    private Integer itemsPerPage = 50;
 }
