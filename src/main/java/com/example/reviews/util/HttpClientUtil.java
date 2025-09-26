@@ -12,12 +12,12 @@ import java.net.URI;
 import java.util.Map;
 
 @Component
-public class HttpClientHelper {
+public class HttpClientUtil {
 
-    private static final Logger log = LoggerFactory.getLogger(HttpClientHelper.class);
+    private static final Logger log = LoggerFactory.getLogger(HttpClientUtil.class);
     private final RestTemplate restTemplate;
 
-    public HttpClientHelper() {
+    public HttpClientUtil() {
         this.restTemplate = new RestTemplate();
     }
 

@@ -1,4 +1,4 @@
-package com.example.reviews.repository;
+package com.example.reviews.repository.spec;
 
 import com.example.reviews.model.entity.Review;
 import org.springframework.data.jpa.domain.Specification;

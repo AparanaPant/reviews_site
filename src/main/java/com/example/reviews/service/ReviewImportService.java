@@ -3,8 +3,8 @@ package com.example.reviews.service;
 import com.example.reviews.config.AppProperties;
 import com.example.reviews.model.upstream.ReviewInDto;
 import com.example.reviews.model.upstream.ReviewsEnvelopeDto;
-import com.example.reviews.repository.BulkReviewWriter;
-import com.example.reviews.util.HttpClientHelper;
+import com.example.reviews.repository.BulkReviewRepository;
+import com.example.reviews.util.HttpClientUtil;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,9 +44,9 @@ import java.util.Set;
  * </ul>
  */
 @Service
-public class ImportService {
+public class ReviewImportService {
 
-    private static final Logger log = LoggerFactory.getLogger(ImportService.class);
+    private static final Logger log = LoggerFactory.getLogger(ReviewImportService.class);
 
     /**
      * Default page size (500) when app.page-size is not configured.
@@ -57,19 +57,19 @@ public class ImportService {
 
     private final AppProperties props;            // config (URL, key, page size, etc.)
     private final ObjectMapper mapper;            // JSON -> Java DTOs
-    private final BulkReviewWriter bulkWriter;    // batch upsert into DB
-    private final HttpClientHelper httpClientHelper; //  HTTP client helper
+    private final BulkReviewRepository bulkWriter;    // batch upsert into DB
+    private final HttpClientUtil httpClientUtil; //  HTTP client helper
     private final Validator validator;            // javax.validation for DTO constraints
 
-    public ImportService(AppProperties props,
-                         BulkReviewWriter bulkWriter,
-                         ObjectMapper mapper,
-                         HttpClientHelper httpClientHelper,
-                         Validator validator) {
+    public ReviewImportService(AppProperties props,
+                               BulkReviewRepository bulkWriter,
+                               ObjectMapper mapper,
+                               HttpClientUtil httpClientUtil,
+                               Validator validator) {
         this.props = props;
         this.bulkWriter = bulkWriter;
         this.mapper = mapper;
-        this.httpClientHelper = httpClientHelper;
+        this.httpClientUtil = httpClientUtil;
         this.validator = validator;
     }
 
@@ -98,7 +98,7 @@ public class ImportService {
                 // Per-page guard: keep context if a single page blows up
                 try {
                     // Step 1: fetch one page (HttpClientHelper throws if non-2xx or empty)
-                    ResponseEntity<String> resp = httpClientHelper.get(
+                    ResponseEntity<String> resp = httpClientUtil.get(
                             baseUrl,
                             Map.of("page", page, "size", size),
                             Map.of("x-api-key", apiKey)

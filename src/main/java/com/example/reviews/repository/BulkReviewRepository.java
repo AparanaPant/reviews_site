@@ -60,13 +60,13 @@ import java.util.List;
  */
 
 @Repository
-public class BulkReviewWriter {
+public class BulkReviewRepository {
 
-    private static final Logger log = LoggerFactory.getLogger(BulkReviewWriter.class);
+    private static final Logger log = LoggerFactory.getLogger(BulkReviewRepository.class);
 
     private final JdbcTemplate jdbc;
 
-    public BulkReviewWriter(JdbcTemplate jdbc) {
+    public BulkReviewRepository(JdbcTemplate jdbc) {
         this.jdbc = jdbc;
     }
 

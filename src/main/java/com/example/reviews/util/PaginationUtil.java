@@ -4,11 +4,11 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 
-public final class PaginationUtils {
+public final class PaginationUtil {
     private static final int MIN_SIZE = 1;
     private static final int MAX_SIZE = 200;
 
-    private PaginationUtils() {}
+    private PaginationUtil() {}
 
     /** Client passes 1-based page;  clamped size and handle optional sort. */
     public static Pageable createPageable(int page, int size, Sort sort) {
