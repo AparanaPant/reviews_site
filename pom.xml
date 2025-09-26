@@ -18,7 +18,7 @@
 
   <properties>
     <!-- Use an LTS JDK supported by Boot 2.7 -->
-    <java.version>16</java.version>
+    <java.version>17</java.version>
     <mapstruct.version>1.5.5.Final</mapstruct.version>
     <lombok.version>1.18.32</lombok.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>

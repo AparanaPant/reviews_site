@@ -1,7 +1,7 @@
 version: "3.9"
 services:
   interview-service:
-    image: maven:3.8.1-openjdk-16
+    image: maven:3.8.1-openjdk-17
     ports:
       - "3000:3000"
     environment:
@@ -13,8 +13,7 @@ services:
       - ./:/app
       - ~/.m2:/root/.m2
     working_dir: /app
-#    command: mvn spring-boot:run
-    command: mvn -q -Dmaven.test.skip=true spring-boot:run
+    command: mvn spring-boot:run
 
     depends_on:
       - db

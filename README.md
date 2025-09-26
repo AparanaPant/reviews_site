@@ -119,12 +119,12 @@ A single table because the requirement is only “search reviews.”
 
 ---
 
-## Tech & compatibility
+### Tech & compatibility
 
-- **Spring Boot 2.7.x** on **JDK 16** to match the provided Docker base image (`maven:3.8.1-openjdk-16`).  
-- Staying here avoids a forced upgrade to JDK 17+ (required by Boot 3).
+- **Initial setup:** Started with **Spring Boot 2.7.x** on **JDK 16** (to align with the provided base image).
+- **Adjustment:** Moved to **JDK 17** because it is an **LTS release** with broader community and vendor support, while still being fully compatible with Spring Boot 2.7.x.
+- **Rationale:** Using 17 ensures long-term stability, security updates, and better tooling/library compatibility, without forcing an upgrade to Boot 3.x.
 
----
 
 ## Why this meets the brief
 
