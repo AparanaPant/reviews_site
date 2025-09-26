@@ -1,4 +1,4 @@
-package com.example.reviews.web;
+package com.example.reviews.api;
 
 import com.example.reviews.service.ReviewService;
 import org.springframework.http.HttpStatus;

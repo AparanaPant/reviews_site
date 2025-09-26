@@ -1,4 +1,4 @@
-package com.example.reviews.web;
+package com.example.reviews.api;
 
 import com.example.reviews.model.dto.PaginationDto;
 import com.example.reviews.model.dto.ReviewDto;

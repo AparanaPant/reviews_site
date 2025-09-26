@@ -120,7 +120,7 @@ public class ImportService {
         URI uri = UriComponentsBuilder
                 .fromHttpUrl(props.getUrl())
                 .queryParam("page", page)
-                .queryParam("requestedSize", size)
+                .queryParam("size", size)
                 .build(true)
                 .toUri();
 
