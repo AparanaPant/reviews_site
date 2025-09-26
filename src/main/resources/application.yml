@@ -26,4 +26,4 @@ reviews:
   api:
     url: ${REVIEW_API_URL:https://obm8fcrdr1.execute-api.us-east-1.amazonaws.com/production/reviews}
     key: ${REVIEW_API_KEY:GWaPfEKWfq4nNTDsCWuqaBlSr5YmyCf820GOCc43}
-    page-size: 60
+    page-size: 500
